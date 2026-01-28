@@ -102,9 +102,10 @@ function sendBtnClick() {
 
 ```
 
-El sistema fisico interactivo que cree concecta la parte digital y un objeto fisico que es el MicroBit, en el codigo digital de p5.js se crea un circulo donde cada que se presione un boton en el MicroBit, el circulo de p5.js se va moviendo en el eje x cada que se presione el boton A para la derecha y el B para la izquierda.
+| El sistema fisico interactivo que cree concecta la parte digital y un objeto fisico que es el MicroBit, en el codigo digital de p5.js se crea un circulo donde cada que se presione un boton en el MicroBit, el circulo de p5.js se va moviendo en el eje x cada que se presione el boton A para la derecha y el B para la izquierda.
 
 ## Bitácora de reflexión
+
 
 
 
