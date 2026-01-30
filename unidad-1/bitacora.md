@@ -21,12 +21,16 @@
 
  ### Actividad 4
 
- 
+  > R// El programa no funciona ya que en el mirco.Bit editor estaba escrito "button_a.was_pressed()", esa instruccion no nos funciona ya que a la hora de enviar el mensaje solo lo hace una vez y el programa de p5.js no alcanza a leerlo, en cambio al usar "button_a.is_pressed()" el mensaje se envia constantemente cada que el boton esta siedno presionado, lo que deja que el programa p5.js pueda alcanzar a leerlo.
+
+```
+
+```
 
 ## Bitácora de aplicación 
 
-### Actividad 5
- #### MicroBit
+ ### Actividad 5
+#### MicroBit
 ```
 from microbit import *
 
@@ -42,7 +46,7 @@ while True:
         sleep(100)
 ```
 
- #### p5.js
+#### p5.js
 ```
 let port;
 let connectBtn;
@@ -107,9 +111,16 @@ function sendBtnClick() {
 
 ```
 
-| El sistema fisico interactivo que cree concecta la parte digital y un objeto fisico que es el MicroBit, en el codigo digital de p5.js se crea un circulo donde cada que se presione un boton en el MicroBit, el circulo de p5.js se va moviendo en el eje x cada que se presione el boton A para la derecha y el B para la izquierda.
+| El sistema fisico interactivo que crea concectando la parte digital y un objeto fisico que es el MicroBit, en el codigo digital de p5.js se crea un circulo donde cada que se presione un boton en el MicroBit, el circulo de p5.js se va moviendo en el eje x cada que se presione el boton A para la derecha y el B para la izquierda.
 
 ## Bitácora de reflexión
+
+ ### Actividad 6
+
+  El programa conecta el MicroBit Editor junto con p5.js, donde el microbit va enviado letras cuando se presiona un boton y el programa de p5.js lee las letras continuamente, y segun la letra que lee cambia de color el cuadrado de el programa p5.js. cuando no se esta presionando ningun boton el cuadrado es de color verde, y cuando se presiona el boton A el cuadrado cambia a color rojo el tiempo que este presionado el boton. Ademas hay un boton en la interfaz que nos permite conectar y desconectar el microbit.
+
+
+
 
 
 
