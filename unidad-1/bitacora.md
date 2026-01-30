@@ -119,6 +119,77 @@ function sendBtnClick() {
 
   El programa conecta el MicroBit Editor junto con p5.js, donde el microbit va enviado letras cuando se presiona un boton y el programa de p5.js lee las letras continuamente, y segun la letra que lee cambia de color el cuadrado de el programa p5.js. cuando no se esta presionando ningun boton el cuadrado es de color verde, y cuando se presiona el boton A el cuadrado cambia a color rojo el tiempo que este presionado el boton. Ademas hay un boton en la interfaz que nos permite conectar y desconectar el microbit.
 
+#### MicroBit
+```
+from microbit import *
+
+uart.init(baudrate=115200)
+
+while True: //se empiza un ciclo
+
+    if button_a.is_pressed():  //si el boton "A" esta presionado
+        uart.write('A') //manda un mensaje "A"
+    else: //si no
+        uart.write('N') //manda un mensaje "N"
+
+    sleep(100)
+
+```
+
+#### p5.js
+
+```
+  let port;
+  let connectBtn;
+  let connectionInitialized = false;
+
+  function setup() {
+    createCanvas(400, 400); //crea un canvas de 400x400
+    background(220); //le coloca color al fondo del canvas
+    port = createSerial(); //crea una comunicacion 
+    connectBtn = createButton("Connect to micro:bit"); //crea un boton para conectar el microbit al programa
+    connectBtn.position(80, 300); //la posicion del boton anterior
+    connectBtn.mousePressed(connectBtnClick); //cuando el boton se presiona se ejecuta esa funcion
+  }
+
+  function draw() { //se ejecuta varias veces 
+    background(220); //limpia la pantalla
+
+    if (port.opened() && !connectionInitialized) { //verifica si el puerto esta activado y si aun no ha iniciado la conexion
+      port.clear(); //borra datos acumulados
+      connectionInitialized = true; //marca si la conexion ya fue iniciada
+    }
+
+    if (port.availableBytes() > 0) { //pregunta si hay datos disponibles desde el microbit
+      let dataRx = port.read(1); 
+      if (dataRx == "A") { //si el caracter recibido es "A"
+        fill("red"); //el cuadrado cambia a color rojo
+      } else if (dataRx == "N") { //si el caracter es "N" 
+        fill("green"); //el cuadrado cambia a color verde
+      }
+    }
+
+    rectMode(CENTER); //dibuja el cuadrado en el centro
+    rect(width / 2, height / 2, 50, 50); //es la posicion en la que se dibuja el cuadrado
+
+    if (!port.opened()) { //si el puerto no esta abierto
+      connectBtn.html("Connect to micro:bit");//cambia el texto del boton
+    } else {
+      connectBtn.html("Disconnect"); //si esta abierto muestra ese texto
+    }
+  }
+
+  function connectBtnClick() { //se ejecuta al presionar el boton
+    if (!port.opened()) { //si el puerto no esta abierto
+      port.open("MicroPython", 115200); //abre el puerto
+      connectionInitialized = false; 
+    } else {
+      port.close(); //cierra la conexion serial
+    }
+  }
+```
+
+
 
 
 
