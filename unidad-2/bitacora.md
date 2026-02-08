@@ -4,13 +4,26 @@
 
 ### Activida 1
  #### ¿Cuáles son los estados en el programa?
-  > R//
+  > R// Inicialización: cuando el programa arranca, crea el objeto Pixel, pinta el pixel inicial y empiza el temporizador. 
+Bucle: el programa está en su loop principal (cada ~20 ms), esperando y ejecutando la lógica de actualización. Aquí no pasa nada, solo se consulta y actualiza.
+Actualizando: cuando en una iteración del bucle se ejecuta update() para cambiar el valor del pixel o la pantalla.
+Timeout ocurrido: cuando el Timer llega a su tiempo, genera un evento “Timeout” que se queda esperando a ser procesado.
+Procesando eventos: el programa saca los eventos de la cola (como el “Timeout”) y ejecuta las acciones correspondientes (cambiar intensidad, reiniciar timer, etc.).
 
  #### ¿Cuáles son los eventos en el programa?
-  > R//
+  > R// Inicio / creación del pixel: es un evento de arranque que prepara el objeto.
+Start del Timer: el temporizador se arranca y programará futuros eventos.
+Tick periódico del loop: aunque no es un “evento único”, cada ciclo es un trigger que llama a update()
+Timeout del Timer: el temporizador expira y publica/genera un evento post_event("Timeout").
+Evento “Timeout” en la cola: el sistema detecta ese evento y lo hace llegar al pixel para que lo procese.
 
  #### ¿Cuáles son las acciones en el programa?
-  > R//
+  > R// set_pixel(0,0,9): se fija el valor (intensidad) del pixel en coordenadas dadas.
+start() del Timer: se comienza a contar para que, después de X ms, ocurra un timeout.
+update() del Pixel: función que se ejecuta en el bucle para actualizar estado interno.
+post_event("Timeout"): el timer publica un evento en la cola cuando expira.
+procesar eventos: el programa extrae el evento Timeout y ejecuta la lógica asociada.
+dibujar en display: después de actualizar estado se pinta la pantalla con el nuevo valor del pixel.
 
 
 ### Actividad 2
@@ -142,3 +155,4 @@ class FSMTask:
 
 
 ## Bitácora de reflexión
+
