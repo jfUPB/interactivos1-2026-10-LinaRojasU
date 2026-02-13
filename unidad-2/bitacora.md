@@ -403,8 +403,356 @@ while True:
 
 ## Bitácora de aplicación 
 
+ ### Actividad 5
+
+ #### ¿Como lo resolvi?
+ > Lo que hice fue escribir el mismo codigo que en la activiad 4, solo que esta recibiendo los mismos eventos si vienen de p5.js. Como por ejemplo inicializar UART para recibir datos de p5.js y por ultimo si llega una de las letras validas hace lo mismo que con los botones fisicos, asi que hace lo mismo sin que haya venido del microbit fisico o de los botones de p5.js.
+
+ #### MicroBit
+ ```
+from microbit import *
+import utime
+import music
+import sys
+
+# habilitar UART para comunicacion con p5.js (usb serial)
+from microbit import uart
+uart.init(115200)
+
+# --- make_fill_images ---
+def make_fill_images(on='9', off='0'):
+    imgs = []
+    for n in range(26):
+        rows = []
+        k = 0
+        for y in range(5):
+            row = []
+            for x in range(5):
+                row.append(on if k < n else off)
+                k += 1
+            rows.append(''.join(row))
+        imgs.append(Image(':'.join(rows)))
+    return imgs
+
+FILL = make_fill_images()   # FILL[0] .. FILL[25]
+
+# --- Timer class ---
+class Timer:
+    def __init__(self, owner, event_to_post, duration):
+        self.owner = owner
+        self.event = event_to_post
+        self.duration = duration
+        self.start_time = 0
+        self.active = False
+
+    def start(self, new_duration=None):
+        if new_duration is not None:
+            self.duration = new_duration
+        self.start_time = utime.ticks_ms()
+        self.active = True
+
+    def stop(self):
+        self.active = False
+
+    def update(self):
+        if self.active:
+            if utime.ticks_diff(utime.ticks_ms(), self.start_time) >= self.duration:
+                self.active = False
+                self.owner.post_event(self.event)
+
+# --- Task con máquina de estados ---
+class Task:
+    def __init__(self):
+        self.event_queue = []
+        self.timers = []
+        # Timer que genera "Timeout" cada 1000 ms cuando está activo
+        self.myTimer = self.createTimer("Timeout", 1000)
+
+        # parámetros del temporizador (pixeles)
+        self.count = 20          # valor inicial (20 pixels)
+        self.min_count = 15
+        self.max_count = 25
+
+        # estado actual (maquina de estados)
+        self.estado_actual = None
+        self.transicion_a(self.estado_configuracion)
+
+    # crea y registra timer
+    def createTimer(self, event, duration):
+        t = Timer(self, event, duration)
+        self.timers.append(t)
+        return t
+
+    # agregar evento a la cola
+    def post_event(self, ev):
+        self.event_queue.append(ev)
+
+    # actualizar timers y procesar cola
+    def update(self):
+        # 1) actualizar timers (no usar sleep dentro de estados)
+        for t in self.timers:
+            t.update()
+
+        # 2) procesar eventos en cola
+        while len(self.event_queue) > 0:
+            ev = self.event_queue.pop(0)
+            if self.estado_actual:
+                self.estado_actual(ev)
+
+    # transicion de estado con EXIT/ENTRY
+    def transicion_a(self, nuevo_estado):
+        if self.estado_actual:
+            self.estado_actual("EXIT")
+        self.estado_actual = nuevo_estado
+        self.estado_actual("ENTRY")
+
+    # -------------------------
+    # Estado: configuración
+    # -------------------------
+    def estado_configuracion(self, ev):
+        if ev == "ENTRY":
+            # mostrar valor actual (cantidad de pixeles encendidos)
+            display.show(FILL[self.count])
+            # temporizador detenido/en desarmado
+            self.myTimer.stop()
+            # opcional: informar por serial el estado
+            try:
+                uart.write("STATE:CONFIG\n")
+                uart.write("COUNT:%d\n" % self.count)
+            except:
+                pass
+
+        elif ev == "A":
+            # aumentar (hasta max_count)
+            if self.count < self.max_count:
+                self.count += 1
+                display.show(FILL[self.count])
+                # opcional: enviar feedback por serial
+                try:
+                    uart.write("COUNT:%d\n" % self.count)
+                except:
+                    pass
+
+        elif ev == "B":
+            # disminuir (hasta min_count)
+            if self.count > self.min_count:
+                self.count -= 1
+                display.show(FILL[self.count])
+                try:
+                    uart.write("COUNT:%d\n" % self.count)
+                except:
+                    pass
+
+        elif ev == "S":
+            # armar: pasar a modo armado (inicia la cuenta regresiva)
+            self.transicion_a(self.estado_armado)
+
+        elif ev == "EXIT":
+            pass
+
+        elif ev == "Timeout":
+            # no usamos Timeouts en configuración
+            pass
+
+    # -------------------------
+    # Estado: armado / cuenta regresiva
+    # -------------------------
+    def estado_armado(self, ev):
+        if ev == "ENTRY":
+            # empezar la cuenta regresiva: arrancar el timer de 1s
+            display.show(FILL[self.count])
+            self.myTimer.start()   # usa duración por defecto 1000 ms
+            try:
+                uart.write("STATE:ARMED\n")
+                uart.write("COUNT:%d\n" % self.count)
+            except:
+                pass
+
+        elif ev == "Timeout":
+            # cada vez que llega Timeout, descontamos 1 pixel
+            if self.count > 0:
+                self.count -= 1
+                display.show(FILL[self.count])
+                try:
+                    uart.write("COUNT:%d\n" % self.count)
+                except:
+                    pass
+
+            # si quedan pixeles, volver a arrancar timer para el siguiente segundo
+            if self.count > 0:
+                self.myTimer.start()
+            else:
+                # llegó a 0 → fin
+                self.transicion_a(self.estado_terminado)
+
+        elif ev == "A" or ev == "B":
+            # durante armado no permitimos cambiar la cuenta (ignorar)
+            pass
+
+        elif ev == "S":
+            # ignorar
+            pass
+
+        elif ev == "EXIT":
+            # al salir del armado detenemos timers
+            self.myTimer.stop()
+
+    # -------------------------
+    # Estado: terminado (alarma)
+    # -------------------------
+    def estado_terminado(self, ev):
+        if ev == "ENTRY":
+            # mostrar calavera y sonar el speaker (no bloqueante)
+            try:
+                display.show(Image.SKULL)
+            except:
+                display.show(Image('00900:09090:00900:00000:00900'))
+
+            try:
+                music.play(music.WAWAWAWAA, wait=False)
+            except:
+                try:
+                    music.play(['C4:1'], wait=False)
+                except:
+                    pass
+
+            try:
+                uart.write("STATE:FINISHED\n")
+            except:
+                pass
+
+        elif ev == "A":
+            # al presionar A volver a configuración y resetear a 20
+            self.count = 20
+            self.transicion_a(self.estado_configuracion)
+
+        elif ev == "B" or ev == "S":
+            # ignorar otros botones en modo terminado
+            pass
+
+        elif ev == "EXIT":
+            # limpiar pantalla si salimos
+            display.clear()
+
+        elif ev == "Timeout":
+            # no aplicable
+            pass
+
+# --- Instanciar la tarea ---
+task = Task()
+
+# --- Bucle principal (genera eventos de botones y shake y lee serial) ---
+while True:
+    # Generar eventos físicos
+    if button_a.was_pressed():
+        task.post_event("A")
+    if button_b.was_pressed():
+        task.post_event("B")
+    if accelerometer.was_gesture("shake"):
+        task.post_event("S")
+
+    # --- NUEVO: leer serial (datos desde p5.js) ---
+    # Si llega una letra A/B/S desde p5.js la encolamos como evento.
+    try:
+        if uart.any():
+            data = uart.read(1)
+            if data:
+                # data puede ser bytes; normalizamos a str de 1 caract.
+                try:
+                    ch = data.decode('utf-8')
+                except:
+                    ch = chr(data[0]) if isinstance(data, (bytes, bytearray)) else str(data)
+                ch = ch.strip()
+                if ch in ("A", "B", "S"):
+                    task.post_event(ch)
+    except Exception as e:
+        # Si hay problemas con UART no interrumpimos la tarea
+        pass
+
+    # actualizar la máquina (timers + procesar cola)
+    task.update()
+
+    # espera corta en el loop principal (permitido)
+    utime.sleep_ms(20)
+ ```
+
+ #### p5.js
+ ```
+let port;
+let connectBtn;
+let upBtn, downBtn, armBtn;
+let feedbackP;
+
+function setup() {
+  createCanvas(400, 200);
+  background(240);
+
+  port = createSerial();
+
+  connectBtn = createButton('Connect to micro:bit');
+  connectBtn.position(20, 120);
+  connectBtn.mousePressed(connectBtnClick);
+
+  upBtn = createButton('UP (A)');
+  upBtn.position(150, 20);
+  upBtn.mousePressed(() => sendChar('A'));
+
+  downBtn = createButton('DOWN (B)');
+  downBtn.position(230, 20);
+  downBtn.mousePressed(() => sendChar('B'));
+
+  armBtn = createButton('ARM (S)');
+  armBtn.position(150, 60);
+  armBtn.mousePressed(() => sendChar('S'));
+
+  feedbackP = createP('Feedback: -');
+  feedbackP.position(20, 150);
+
+  textAlign(LEFT, TOP);
+}
+
+function draw() {
+  background(240);
+
+  fill(0);
+  text("Controles remotos para el temporizador (A,B,S)", 20, 5);
+
+  // lectura de feedback del micro:bit (opcional)
+  if (port.availableBytes && port.availableBytes() > 0) {
+    let data = port.read(1); // lee 1 byte
+    if (data) {
+      // data puede ser 'C', o parte de "COUNT:..." si micro:bit mandó texto
+      feedbackP.html('Feedback: ' + String(data));
+    }
+  }
+
+  // estado del botón de conexión
+  if (!port.opened()) {
+    connectBtn.html('Connect to micro:bit');
+  } else {
+    connectBtn.html('Disconnect');
+  }
+}
+
+function connectBtnClick() {
+  if (!port.opened()) {
+    port.open('MicroPython', 115200);
+  } else {
+    port.close();
+  }
+}
+
+function sendChar(ch) {
+  if (port.opened()) {
+    port.write(ch);
+  } else {
+    console.log('Port not open');
+  }
+}
+ ```
 
 
 ## Bitácora de reflexión
+
 
 
