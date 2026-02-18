@@ -183,6 +183,8 @@ class Temporizador(FSMTask):
     def estado_armed(self, ev):
         if ev == ENTRY:
             self.myTimer.start()
+            self.sequence.clear()
+            
         if ev == "Timeout":
             if self.counter > 0:
                 self.counter -= 1
@@ -237,3 +239,4 @@ while True:
 ## Bitácora de reflexión
 
  ### Actividad 5
+
