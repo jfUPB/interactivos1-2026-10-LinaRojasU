@@ -145,7 +145,7 @@ while True:
  > Lo que aprendi con esta activiad fue entender mejor lo de los estados de como al terminar uno empiza otro, tuve errores como en pensar usar ciclos, pero pude entender la actividad mejor segun todo lo que hicimos, sobretodo como podemos ir avanzando en estos programas.
 
  ### Actividad 2
-
+ #### Main
  ```
 from microbit import *
 from fsm import FSMTask, ENTRY, EXIT
@@ -156,8 +156,10 @@ import music
 class Temporizador(FSMTask):
     def __init__(self):
         super().__init__()
-        self.sequence = []
+        self.sequencia = []
         self.myPassword = ["A", "B", "A"]
+        self.event_queue = []
+        self.timers = []
         self.counter = 20
         self.myTimer = self.add_timer("Timeout",1000)
         self.estado_actual = None
@@ -183,8 +185,6 @@ class Temporizador(FSMTask):
     def estado_armed(self, ev):
         if ev == ENTRY:
             self.myTimer.start()
-            self.sequence.clear()
-            
         if ev == "Timeout":
             if self.counter > 0:
                 self.counter -= 1
@@ -193,6 +193,7 @@ class Temporizador(FSMTask):
                     self.transition_to(self.estado_timeout)
                 else:
                     self.myTimer.start()
+                    
         if ev == "S":
             if self.myTimer.active == False:
                 self.myTimer.start()
@@ -200,13 +201,13 @@ class Temporizador(FSMTask):
                 self.myTimer.stop()
 
         if ev == "A" or ev == "B":
-            self.sequence.append(ev)
-            if len(self.sequence) == 3:
-                if self.sequence == self.myPassword:
+            self.sequencia.append(ev)
+            if len(self.sequencia) == 3:
+                if self.sequencia == self.myPassword:
                     self.transition_to(self.estado_config)
                 else:
-                    self.sequence.clear()
-            
+                    self.sequencia.clear()
+                
     def estado_timeout(self, ev):
         if ev == ENTRY:
             display.show(Image.SKULL)
@@ -230,13 +231,409 @@ while True:
     utime.sleep_ms(20)
  ```
 
+ #### fsm
+```
+import utime
+
+ENTRY = "ENTRY"
+EXIT  = "EXIT"
+
+class Timer:
+    def __init__(self, owner, event_to_post, duration):
+        self.owner = owner
+        self.event = event_to_post
+        self.duration = duration
+        self.start_time = 0
+        self.active = False
+
+    def start(self, new_duration=None):
+        if new_duration is not None:
+            self.duration = new_duration
+        self.start_time = utime.ticks_ms()
+        self.active = True
+
+    def stop(self):
+        self.active = False
+
+    def update(self):
+        if self.active and utime.ticks_diff(utime.ticks_ms(), self.start_time) >= self.duration:
+            self.active = False
+            self.owner.post_event(self.event)
+
+
+class FSMTask:
+    def __init__(self):
+        self._q = []
+        self._timers = []
+        self._state = None
+
+    def post_event(self, ev):
+        self._q.append(ev)
+
+    def add_timer(self, event, duration):
+        t = Timer(self, event, duration)
+        self._timers.append(t)
+        return t
+
+    def transition_to(self, new_state):
+        if self._state:
+            self._state(EXIT)
+        self._state = new_state
+        self._state(ENTRY)
+
+    def update(self):
+        for t in self._timers:
+            t.update()
+        while self._q:
+            ev = self._q.pop(0)
+            if self._state:
+                self._state(ev)
+```
+
+ #### utils
+```
+from microbit import Image
+
+def make_fill_images(on='9', off='0'):
+    imgs = []
+    for n in range(26):
+        rows = []
+        k = 0
+        for y in range(5):
+            row = []
+            for x in range(5):
+                row.append(on if k < n else off)
+                k += 1
+            rows.append(''.join(row))
+        imgs.append(Image(':'.join(rows)))
+    return imgs
+
+FILL = make_fill_images()
+# Para mostrar usas display.show(FILL[n]) donde n será
+# un valor de 0 a 25
+```
+
  ### Actividad 3
 
 ## Bitácora de aplicación 
 
  ### Actividad 4
 
+ #### p5.js
+##### sketch.js
+```
+// Serial / UI
+let port;
+let connectBtn;
+let feedbackP; // opcional: mostrar feedback del micro:bit
+
+function setup() {
+  port = createSerial();
+    connectBtn = createButton('Connect to micro:bit');
+    connectBtn.position(80, 300);
+    connectBtn.mousePressed(connectBtnClick);
+}
+
+const TIMER_LIMITS = {
+  min: 15,
+  max: 25,
+  defaultValue: 20,
+};
+
+const EVENTS = {
+  DEC: "A",
+  INC: "B",
+  START: "S",
+  TICK: "Timeout",
+};
+
+const UI = {
+  dialSize: 250,
+  ringWeight: 20,
+  bigText: 100,
+  configText: 120,
+  helpText: 18,
+};
+
+
+class Temporizador extends FSMTask {
+  constructor(minValue, maxValue, defaultValue) {
+    super();
+
+    this.minValue = minValue;
+    this.maxValue = maxValue;
+    this.defaultValue = defaultValue;
+    this.configValue = defaultValue;
+    this.totalSeconds = defaultValue;
+    this.remainingSeconds = defaultValue;
+
+    // --- NUEVO: secuencia y contraseña (igual que en micro:bit) ---
+    this.sequencia = [];                // guardamos los eventos A/B durante armado
+    this.myPassword = ["A", "B", "A"];  // contraseña buscada
+
+    this.myTimer = this.addTimer(EVENTS.TICK, 1000);
+    this.transitionTo(this.estado_config);
+  }
+
+  get currentState() {
+    return this.state;
+  }
+
+  estado_config = (ev) => {
+    if (ev === ENTRY) {
+      this.configValue = this.defaultValue;
+      // opcional: limpiar secuencia al entrar en configuración
+      this.sequencia = [];
+    }
+    else if (ev === EVENTS.DEC) {
+      if (this.configValue > this.minValue) this.configValue--;
+    } else if (ev === EVENTS.INC) {
+      if (this.configValue < this.maxValue) this.configValue++;
+    } else if (ev === EVENTS.START) {
+      this.totalSeconds = this.configValue;
+      this.remainingSeconds = this.totalSeconds;
+      this.transitionTo(this.estado_armed);
+    }
+  };
+  
+   estado_armed = (ev) => {
+    if (ev === ENTRY) {
+      this.myTimer.start();
+    } else if (ev === EVENTS.TICK) {
+      if (this.remainingSeconds > 0) {
+        this.remainingSeconds--;
+        if (this.remainingSeconds === 0) {
+          this.transitionTo(this.estado_timeout);
+        } else {
+          this.myTimer.start();
+        }
+      }
+    } else if (ev === EXIT) {
+      this.myTimer.stop();
+    } else if (ev === EVENTS.START) {
+      // S: toggle del timer (igual que en micro:bit)
+      if (this.myTimer.active) {
+        this.myTimer.stop();
+      } else {
+        this.myTimer.start();
+      }
+    } else if (ev === EVENTS.DEC || ev === EVENTS.INC) {
+      // A/B: guardar en la secuencia y comparar cuando haya 3 entradas
+      const code = (ev === EVENTS.DEC) ? "A" : "B";
+      this.sequencia.push(code);
+
+      if (this.sequencia.length === this.myPassword.length) {
+        const match = this.sequencia.every((v, i) => v === this.myPassword[i]);
+        if (match) {
+          // coincidencia: volver a configuración
+          this.transitionTo(this.estado_config);
+        } else {
+          // no coincide: limpiar y permitir nuevo intento
+          this.sequencia = [];
+        }
+      }
+    }
+  };
+
+  estado_timeout = (ev) => {
+    if (ev === ENTRY) {
+      console.log("¡TIEMPO!");
+    } else if (ev === EVENTS.DEC) {
+      // en el micro:bit A reinicia desde terminado; aquí igual
+      this.transitionTo(this.estado_config);
+    }
+  }
+
+}
+
+let temporizador;
+const renderer = new Map();
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  temporizador = new Temporizador(
+    TIMER_LIMITS.min,
+    TIMER_LIMITS.max,
+    TIMER_LIMITS.defaultValue
+  );
+  textAlign(CENTER, CENTER);
+
+  renderer.set(temporizador.estado_config, () => drawConfig(temporizador.configValue));
+  renderer.set(temporizador.estado_armed, () => drawArmed(temporizador.remainingSeconds, temporizador.totalSeconds));
+  renderer.set(temporizador.estado_timeout, () => drawTimeout());
+}
+
+function draw() {
+  temporizador.update();
+  renderer.get(temporizador.currentState)?.();
+  
+   if (!port.opened()) {
+        connectBtn.html('Connect to micro:bit');
+    }
+    else {
+        connectBtn.html('Disconnect');
+    }
+}
+
+function connectBtnClick() {
+    if (!port.opened()) {
+        port.open('MicroPython', 115200);
+    } else {
+        port.close();
+    }
+}
+
+function drawConfig(val) {
+  background(20, 40, 80);
+  fill(255);
+  textSize(120);
+  text(val, width / 2, height / 2);
+  textSize(18);
+  fill(200);
+  text("A(-) B(+) S(start)", width / 2, height / 2 + 100);
+}
+
+function drawArmed(val, total) {
+  background(20, 20, 20);
+  let pulse = sin(frameCount * 0.1) * 10;
+
+  noFill();
+  strokeWeight(20);
+  stroke(255, 100, 0, 50);
+  ellipse(width / 2, height / 2, 250);
+
+  stroke(255, 150, 0);
+  let angle = map(val, 0, total, 0, TWO_PI);
+  arc(width / 2, height / 2, 250, 250, -HALF_PI, angle - HALF_PI);
+
+  fill(255);
+  noStroke();
+  textSize(100 + pulse);
+  text(val, width / 2, height / 2);
+}
+
+function drawTimeout() {
+  let bg = frameCount % 20 < 10 ? color(150, 0, 0) : color(255, 0, 0);
+  background(bg);
+  fill(255);
+  textSize(100);
+  text("¡TIEMPO!", width / 2, height / 2);
+}
+
+function keyPressed() {
+  if (key === "a" || key === "A") temporizador.postEvent("A");
+  if (key === "b" || key === "B") temporizador.postEvent("B");
+  if (key === "s" || key === "S") temporizador.postEvent("S");
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+```
+
+##### style.css
+```
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+canvas {
+  display: block;
+}
+```
+
+##### index.html
+```
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sketch</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.js"></script>
+    <script src="https://unpkg.com/@gohai/p5.webserial@^1/libraries/p5.webserial.js"></script> 
+  </head>
+
+  <body>
+    <script src="fsm.js"></script>
+    <script src="sketch.js"></script>
+  </body>
+</html>
+```
+
+##### fsm.js 
+```
+const ENTRY = "ENTRY";
+const EXIT = "EXIT";
+
+class Timer {
+  constructor(owner, eventToPost, duration) {
+    this.owner = owner;
+    this.event = eventToPost;
+    this.duration = duration;
+    this.startTime = 0;
+    this.active = false;
+  }
+
+  start(newDuration = null) {
+    if (newDuration !== null) this.duration = newDuration;
+    this.startTime = millis();
+    this.active = true;
+  }
+
+  stop() {
+    this.active = false;
+  }
+
+  update() {
+    if (this.active && millis() - this.startTime >= this.duration) {
+      this.active = false;
+      this.owner.postEvent(this.event);
+    }
+  }
+}
+
+class FSMTask {
+  constructor() {
+    this.queue = [];
+    this.timers = [];
+    this.state = null;
+  }
+
+  postEvent(ev) {
+    this.queue.push(ev);
+  }
+
+  addTimer(event, duration) {
+    let t = new Timer(this, event, duration);
+    this.timers.push(t);
+    return t;
+  }
+
+  transitionTo(newState) {
+    if (this.state) this.state(EXIT);
+    this.state = newState;
+    this.state(ENTRY);
+  }
+
+  update() {
+    for (let t of this.timers) {
+      t.update();
+    }
+    while (this.queue.length > 0) {
+      let ev = this.queue.shift();
+      if (this.state) this.state(ev);
+    }
+  }
+}
+```
 ## Bitácora de reflexión
 
  ### Actividad 5
+
 
