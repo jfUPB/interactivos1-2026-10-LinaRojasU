@@ -322,17 +322,7 @@ FILL = make_fill_images()
  #### p5.js
 ##### sketch.js
 ```
-// Serial / UI
 let port;
-let connectBtn;
-let feedbackP; // opcional: mostrar feedback del micro:bit
-
-function setup() {
-  port = createSerial();
-    connectBtn = createButton('Connect to micro:bit');
-    connectBtn.position(80, 300);
-    connectBtn.mousePressed(connectBtnClick);
-}
 
 const TIMER_LIMITS = {
   min: 15,
@@ -443,7 +433,6 @@ class Temporizador extends FSMTask {
       this.transitionTo(this.estado_config);
     }
   }
-
 }
 
 let temporizador;
@@ -466,21 +455,6 @@ function setup() {
 function draw() {
   temporizador.update();
   renderer.get(temporizador.currentState)?.();
-  
-   if (!port.opened()) {
-        connectBtn.html('Connect to micro:bit');
-    }
-    else {
-        connectBtn.html('Disconnect');
-    }
-}
-
-function connectBtnClick() {
-    if (!port.opened()) {
-        port.open('MicroPython', 115200);
-    } else {
-        port.close();
-    }
 }
 
 function drawConfig(val) {
@@ -491,6 +465,7 @@ function drawConfig(val) {
   textSize(18);
   fill(200);
   text("A(-) B(+) S(start)", width / 2, height / 2 + 100);
+  
 }
 
 function drawArmed(val, total) {
@@ -556,7 +531,6 @@ canvas {
     <link rel="stylesheet" type="text/css" href="style.css">
 
     <script src="https://cdn.jsdelivr.net/npm/p5@1.11.11/lib/p5.js"></script>
-    <script src="https://unpkg.com/@gohai/p5.webserial@^1/libraries/p5.webserial.js"></script> 
   </head>
 
   <body>
@@ -635,5 +609,6 @@ class FSMTask {
 ## Bitácora de reflexión
 
  ### Actividad 5
+
 
 
