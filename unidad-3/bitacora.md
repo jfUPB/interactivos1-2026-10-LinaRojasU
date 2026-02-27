@@ -784,6 +784,54 @@ class FSMTask {
 
  ### Actividad 5
 
+### Emisor
+```
+from microbit import *
+import radio
+radio.config(group=47)
+
+radio.on()
+
+while True:
+
+    if button_a.was_pressed():
+        radio.send('A\n')
+    if button_b.was_pressed():
+        radio.send('B\n')
+    if accelerometer.was_gesture("shake"):
+        radio.send('S\n')
+```
+
+### Receptor
+```
+from microbit import *
+import utime
+import radio
+radio.config(group=47)
+radio.on()
+
+uart.init(baudrate=115200)
+
+while True:
+    message= radio.receive() 
+    
+    if message == 'A\n':
+        uart.write('A\n')
+    if message == 'B\n':
+        uart.write('B\n')
+    if message == 'S\n':
+        uart.write('S\n')
+    if button_a.was_pressed():
+        uart.write("A\n")
+    if button_b.was_pressed():
+        uart.write("B\n")
+    if accelerometer.was_gesture("shake"):
+        uart.write("S\n")
+        utime.sleep_ms(500)
+
+    utime.sleep_ms(20)
+```
+
 
 
 
