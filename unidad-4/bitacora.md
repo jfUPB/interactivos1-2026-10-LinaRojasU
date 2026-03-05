@@ -98,7 +98,7 @@ while True:
 
 - conectarse a pagina al serer
 
--para conectarse con el microbit:
+- para conectarse con el microbit:
 
 - node bridgeServer.js --device microbit
 
@@ -115,3 +115,4 @@ while True:
 ## Bitácora de reflexión
 
 ### Actividad 3
+
