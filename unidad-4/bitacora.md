@@ -791,3 +791,6 @@ main().catch((e) => {
 
 ### Actividad 3
 
+<img width="1250" height="713" alt="image" src="https://github.com/user-attachments/assets/d129c0ce-8322-4f64-a928-08b24574f972" />
+
+
