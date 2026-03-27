@@ -501,7 +501,8 @@ Al inicio tuve un error on el codigo de microbit editor que no me mostraba que p
 
 <img width="734" height="445" alt="image" src="https://github.com/user-attachments/assets/7b3e5e8b-bbad-4460-93a3-dcdbc60259d7" />
 
-checksum: <img width="714" height="476" alt="image" src="https://github.com/user-attachments/assets/5e75bc4e-be12-4165-a3b9-df414e6c0742" />
+checksum: 
+<img width="714" height="476" alt="image" src="https://github.com/user-attachments/assets/5e75bc4e-be12-4165-a3b9-df414e6c0742" />
 
 
 
