@@ -94,6 +94,13 @@ class MicrobitBinaryAdapter extends BaseAdapter {
     }
 
     _onChunk(chunk) {
+        console.log("BYTES:", [...chunk]);
+
+        if (chunk.length >= 8) {
+            const checksum = chunk[7];
+            console.log("CHECKSUM RECIBIDO:", checksum);
+        }
+        console.log("RAW HEX:", chunk.toString("hex"));
         if (!Buffer.isBuffer(chunk)) {
             chunk = Buffer.from(chunk);
         }
@@ -483,5 +490,19 @@ while True:
 
     sleep(100)
 ```
+
+Evidencias
+
+Al inicio tuve un error on el codigo de microbit editor que no me mostraba que pintara en las visuales, tuve que cambiar el codigo para que funcionara.
+
+<img width="1907" height="889" alt="image" src="https://github.com/user-attachments/assets/bdf72f28-1abc-4624-986e-b53851488b55" />
+
+<img width="1902" height="849" alt="Captura de pantalla 2026-03-27 145929" src="https://github.com/user-attachments/assets/67827cc0-7434-4f2b-baa6-36d56d9ee6ad" />
+
+<img width="734" height="445" alt="image" src="https://github.com/user-attachments/assets/7b3e5e8b-bbad-4460-93a3-dcdbc60259d7" />
+
+checksum: <img width="714" height="476" alt="image" src="https://github.com/user-attachments/assets/5e75bc4e-be12-4165-a3b9-df414e6c0742" />
+
+
 
 ## Bitácora de reflexión
