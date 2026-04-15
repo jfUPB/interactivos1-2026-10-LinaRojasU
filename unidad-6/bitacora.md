@@ -45,5 +45,14 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 
 ## Bitácora de aplicación 
 
+### Cómo configuraste Strudel para emitir eventos;
+
+### Qué estructura final de mensaje decidiste usar;
+
+### Cómo conectaste bridgeClient.js, FSMTask, updateLogic y drawRunning;
+Cómo separaste recepción, cola temporal y renderizado;
+Qué pruebas hiciste para verificar la sincronización;
+Qué problemas encontraste y cómo los solucionaste.
+
 
 ## Bitácora de reflexión
