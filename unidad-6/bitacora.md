@@ -46,13 +46,85 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 ## Bitácora de aplicación 
 
 ### Cómo configuraste Strudel para emitir eventos;
+> Strudel, en su versión REPL online, no emite eventos por WebSocket de forma nativa, sino que genera eventos musicales internamente para su motor de audio.
 
 ### Qué estructura final de mensaje decidiste usar;
+> Se definió un formato de mensaje normalizado mediante un Adapter en el servidor:
+```
+{
+  "type": "strudel",
+  "timestamp": 1710000000000,
+  "payload": {
+    "eventType": "note",
+    "sound": "bd",
+    "delta": 0.5
+  }
+}
+```
+Este formato permite desacoplar completamente el frontend del formato interno de Strudel (args, address, etc.) y trabajar con un contrato claro y estable.
 
 ### Cómo conectaste bridgeClient.js, FSMTask, updateLogic y drawRunning;
-Cómo separaste recepción, cola temporal y renderizado;
-Qué pruebas hiciste para verificar la sincronización;
-Qué problemas encontraste y cómo los solucionaste.
+> El sistema se conectó respetando la arquitectura por capas:
+
+- Strudel (simulado) envía eventos al puerto 8080
+- bridgeServer.js recibe estos eventos y los pasa por StrudelAdapter
+- StrudelAdapter normaliza los datos
+- El bridge retransmite los eventos al puerto 8081
+- bridgeClient.js recibe los eventos y los envía a la FSM
+- FSMTask organiza el flujo sin modificar la lógica
+- updateLogic almacena los eventos en una cola temporal
+- drawRunning se encarga exclusivamente de renderizar
+
+Esto garantiza una separación clara entre datos, lógica temporal y visualización.
+
+### Cómo separaste recepción, cola temporal y renderizado;
+> Se implementó una separación clara en tres niveles:
+
+1. Recepción
+
+Ocurre en el WebSocket (onmessage), donde solo se reciben los datos ya normalizados.
+
+2. Cola temporal
+
+Los eventos se almacenan en eventQueue, donde se organizan por timestamp y esperan su momento de ejecución.
+
+3. Renderizado
+
+En el draw() se compara el tiempo actual (Date.now()) con el timestamp de cada evento.
+Solo cuando coincide, el evento se convierte en una animación visual.
+
+Esto permite desacoplar completamente el momento de llegada del evento y su ejecución.
+
+### Qué pruebas hiciste para verificar la sincronización;
+> Se realizaron varias pruebas:
+
+Ejecución sin timestamp: las animaciones aparecían desincronizadas
+Uso de cola con timestamp: las animaciones se alinearon con el ritmo esperado
+Eventos consecutivos: se verificó que la cola mantuviera el orden correcto
+Ajuste de latencia: se utilizó LATENCY_CORRECTION para compensar posibles retrasos
+
+Estas pruebas confirmaron que la sincronización depende del manejo del tiempo, no del momento de recepción.
+
+### Qué problemas encontraste y cómo los solucionaste.
+> 1. Strudel no envía eventos externamente
+
+Problema: No hay salida WebSocket nativa
+Solución: Simular el envío de eventos respetando su estructura interna
+
+2. Dependencia del formato crudo (args)
+
+Problema: El frontend estaba acoplado a Strudel
+Solución: Implementar un Adapter en el servidor
+
+3. Desfase en la ejecución
+
+Problema: Los eventos se ejecutaban al llegar
+Solución: Implementar una cola basada en timestamp
+
+4. Inconsistencia en nombres de sonidos
+
+Problema: Diferencias entre tr909bd y bd
+Solución: Normalizar nombres en el Adapter
 
 
 ## Bitácora de reflexión
