@@ -49,10 +49,10 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 <summary>Bitácora de aplicación</summary>
 
 ### Cómo configuraste Strudel para emitir eventos;
-> Strudel, no envía eventos por WebSocket de forma nativa. Lo que hace es generar eventos internamente para producir sonido, pero esos eventos no salen del navegador.
+> Strudel no envía eventos por WebSocket de forma automática. Lo que hace es generar eventos internamente para producir sonido, pero esos datos no salen del navegador. Por eso, lo que hice fue tomar esa idea de evento musical (sonido, duración, etc.) y enviarlo manualmente como un mensaje por WebSocket al servidor.
 
 ### Qué estructura final de mensaje decidiste usar;
-> Se definió un formato de mensaje normalizado mediante un Adapter en el servidor:
+> Decidí usar un formato simple y claro para que el sistema no dependa de cómo funciona Strudel internamente.
 ```
 {
   "type": "strudel",
@@ -64,41 +64,37 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
   }
 }
 ```
-Este formato permite desacoplar completamente el frontend del formato interno de Strudel (args, address, etc.) y trabajar con un contrato claro y estable.
+Este formato es más limpio y fácil de entender, y permite que el frontend trabaje sin tener que interpretar cosas como args o address.
 
 ### Cómo conectaste bridgeClient.js, FSMTask, updateLogic y drawRunning;
-> El sistema se conectó respetando la arquitectura por capas:
+> El sistema funciona en cadena:
 
-- Strudel (simulado) envía eventos al puerto 8080
-- bridgeServer.js recibe estos eventos y los pasa por StrudelAdapter
-- StrudelAdapter normaliza los datos
-- El bridge retransmite los eventos al puerto 8081
-- bridgeClient.js recibe los eventos y los envía a la FSM
-- FSMTask organiza el flujo sin modificar la lógica
-- updateLogic almacena los eventos en una cola temporal
-- drawRunning se encarga exclusivamente de renderizar
+- Strudel envía eventos al puerto 8080.
+- El bridge los recibe.
+- El Adapter los organiza en un formato claro.
+- El bridge los reenvía al frontend (puerto 8081).
+- bridgeClient recibe el mensaje.
+- La FSM lo dirige a la lógica del sistema.
+- updateLogic guarda los eventos en una cola.
+- drawRunning se encarga de dibujar.
 
-Esto garantiza una separación clara entre datos, lógica temporal y visualización.
+Cada parte tiene su responsabilidad y no se mezclan entre sí.
 
 ### Cómo separaste recepción, cola temporal y renderizado;
-> Separé el sistema en tres partes:
-Primero, la recepción, donde solo recibo el mensaje por WebSocket.
-Luego, la cola temporal, donde guardo los eventos con su timestamp.
-Y finalmente, el renderizado, donde en cada frame comparo el tiempo actual con el timestamp y ejecuto la animación solo cuando corresponde.
+> Dividí el proceso en tres partes:
 
-> Esto evita que los eventos se ejecuten apenas llegan y permite mantener sincronización.
+- Recepción: solo recibo el mensaje por WebSocket.
+- Cola temporal: guardo los eventos con su timestamp.
+- Renderizado: en cada frame comparo el tiempo actual con el timestamp y ejecuto la animación cuando corresponde.
+
+> Esto evita que todo pase apenas llega el mensaje y permite mantener la sincronización.
 
 ### Qué pruebas hiciste para verificar la sincronización;
-> Primero probé ejecutar los eventos apenas llegaban, y noté que todo se veía desincronizado.
-Luego implementé la cola con timestamp y las animaciones empezaron a coincidir con el ritmo.
-También probé con muchos eventos seguidos para verificar que la cola mantuviera el orden.
-Por último, ajusté la latencia usando una variable de corrección para afinar la sincronización.
+> Primero probé ejecutar los eventos apenas llegaban, y se veía desordenado y fuera de ritmo, luego implementé la cola con timestamp y las animaciones empezaron a coincidir con el ritmo, también probé con muchos eventos seguidos para asegurar que no se perdieran y que el orden se mantuviera y por último, ajusté un pequeño valor de latencia para mejorar la precisión.
 
 ### Qué problemas encontraste y cómo los solucionaste.
-> Uno de los principales problemas fue que Strudel no envía eventos directamente, así que tuve que simular ese envío respetando su estructura.
-También tuve problemas porque el frontend dependía del formato crudo (args), lo cual rompía el desacoplamiento. Eso lo solucioné usando un Adapter en el servidor.
-Otro problema fue que los eventos se ejecutaban apenas llegaban, causando desfase. Esto se solucionó usando una cola basada en timestamp.
-Finalmente, tuve inconsistencias con los nombres de sonidos, que resolví normalizándolos en el Adapter.
+> Uno de los principales problemas fue que Strudel no envía eventos directamente, así que tuve que simular ese envío, también el frontend estaba dependiendo del formato original de Strudel (args), lo cual no era buena práctica. Eso lo solucioné usando un Adapter en el servidor, otro problema fue que los eventos se ejecutaban apenas llegaban, lo que causaba desfase. Esto lo arreglé usando una cola basada en timestamp y finalmente, tuve diferencias en los nombres de los sonidos, y lo solucioné normalizándolos en el Adapter.
 
 </details>
+
 ## Bitácora de reflexión
