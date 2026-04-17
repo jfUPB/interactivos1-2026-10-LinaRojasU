@@ -1,6 +1,7 @@
 # Unidad 6
 
-## Bitácora de proceso de aprendizaje
+<details>
+<summary>Bitácora de proceso de aprendizaje</summary>
 
 ### Actividad 1 
 ¿Cuál es la diferencia entre recibir un mensaje y ejecutarlo?
@@ -42,8 +43,10 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 
 ¿Qué Adapter necesitas ahora para que los eventos de Strudel no entren “crudos” al sistema visual?
  > Ahora necesitamos que la función del Adapter extraiga datos relevantes, simplifique estructuray cree un contrato claro para el frontend.
+</details>
 
-## Bitácora de aplicación 
+<details>
+<summary>Bitácora de aplicación</summary>
 
 ### Cómo configuraste Strudel para emitir eventos;
 > Strudel, no envía eventos por WebSocket de forma nativa. Lo que hace es generar eventos internamente para producir sonido, pero esos eventos no salen del navegador.
@@ -97,5 +100,5 @@ También tuve problemas porque el frontend dependía del formato crudo (args), l
 Otro problema fue que los eventos se ejecutaban apenas llegaban, causando desfase. Esto se solucionó usando una cola basada en timestamp.
 Finalmente, tuve inconsistencias con los nombres de sonidos, que resolví normalizándolos en el Adapter.
 
-
+</details>
 ## Bitácora de reflexión
