@@ -4,19 +4,19 @@
 <summary>Bitácora de proceso de aprendizaje</summary>
 
 ### Actividad 1 
-¿Cuál es la diferencia entre recibir un mensaje y ejecutarlo?
- > Recibir un mensaje significa que el sistema obtiene los datos enviados desde otra aplicación (por ejemplo, Strudel), pero no implica que el evento ocurra inmediatamente. Ejecutar un mensaje implica interpretarlo y activar una acción en el momento adecuado.
+#### ¿Cuál es la diferencia entre recibir un mensaje y ejecutarlo?
+Recibir un mensaje significa que el sistema obtiene los datos enviados desde otra aplicación (por ejemplo, Strudel), pero no implica que el evento ocurra inmediatamente. Ejecutar un mensaje implica interpretarlo y activar una acción en el momento adecuado.
 
-¿Por qué un sistema audiovisual puede necesitar timestamp además de los datos del evento?
- > Un sistema audiovisual necesita sincronización precisa entre sonido y visual.
- > El timestamp permite: ejecutar eventos en el momento correcto, evitar desfases por red o rendimiento y mantener ritmo y coherencia visual.
- > Sin timestamp: las animaciones llegan “tarde” o “desordenadas”
- > Con timestamp: todo ocurre en sincronía con el ritmo musical
+#### ¿Por qué un sistema audiovisual puede necesitar timestamp además de los datos del evento?
+Un sistema audiovisual necesita sincronización precisa entre sonido y visual.
+El timestamp permite: ejecutar eventos en el momento correcto, evitar desfases por red o rendimiento y mantener ritmo y coherencia visual.
+Sin timestamp: las animaciones llegan “tarde” o “desordenadas”
+Con timestamp: todo ocurre en sincronía con el ritmo musical
 
-¿Qué aspectos de la arquitectura de las unidades 4 y 5 permanecen intactos aunque ahora la fuente de datos ya no sea hardware?
- > Aunque cambia la fuente de datos (ya no hardware), la arquitectura sigue igual: existe una fuente externa de datos, se requiere un adapter, hay una capa de transporte (bridgeServer.js), existe un frontend que interpreta eventos.
- > Lo que cambia: antes eran datos físicos (serial), ahora son eventos musicales con tiempo.
- > Lo que no cambia: separación de responsabilidades, diseño desacoplado, flujo por capas.
+#### ¿Qué aspectos de la arquitectura de las unidades 4 y 5 permanecen intactos aunque ahora la fuente de datos ya no sea hardware?
+Aunque cambia la fuente de datos (ya no hardware), la arquitectura sigue igual: existe una fuente externa de datos, se requiere un adapter, hay una capa de transporte (bridgeServer.js), existe un frontend que interpreta eventos.
+Lo que cambia: antes eran datos físicos (serial), ahora son eventos musicales con tiempo.
+Lo que no cambia: separación de responsabilidades, diseño desacoplado, flujo por capas.
 
 ### Paso 1
 Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocolo?
@@ -48,11 +48,11 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 <details>
 <summary>Bitácora de aplicación</summary>
 
-### Cómo configuraste Strudel para emitir eventos;
-> Strudel no envía eventos por WebSocket de forma automática. Lo que hace es generar eventos internamente para producir sonido, pero esos datos no salen del navegador. Por eso, lo que hice fue tomar esa idea de evento musical (sonido, duración, etc.) y enviarlo manualmente como un mensaje por WebSocket al servidor.
+#### Cómo configuraste Strudel para emitir eventos;
+Strudel no envía eventos por WebSocket de forma automática. Lo que hace es generar eventos internamente para producir sonido, pero esos datos no salen del navegador. Por eso, lo que hice fue tomar esa idea de evento musical (sonido, duración, etc.) y enviarlo manualmente como un mensaje por WebSocket al servidor.
 
-### Qué estructura final de mensaje decidiste usar;
-> Decidí usar un formato simple y claro para que el sistema no dependa de cómo funciona Strudel internamente.
+#### Qué estructura final de mensaje decidiste usar;
+Decidí usar un formato simple y claro para que el sistema no dependa de cómo funciona Strudel internamente.
 ```
 {
   "type": "strudel",
@@ -66,8 +66,8 @@ Si Strudel fuera “el dispositivo” de esta unidad, ¿Cuál sería su protocol
 ```
 Este formato es más limpio y fácil de entender, y permite que el frontend trabaje sin tener que interpretar cosas como args o address.
 
-### Cómo conectaste bridgeClient.js, FSMTask, updateLogic y drawRunning;
-> El sistema funciona en cadena:
+#### Cómo conectaste bridgeClient.js, FSMTask, updateLogic y drawRunning;
+El sistema funciona en cadena:
 
 - Strudel envía eventos al puerto 8080.
 - El bridge los recibe.
@@ -80,20 +80,20 @@ Este formato es más limpio y fácil de entender, y permite que el frontend trab
 
 Cada parte tiene su responsabilidad y no se mezclan entre sí.
 
-### Cómo separaste recepción, cola temporal y renderizado;
-> Dividí el proceso en tres partes:
+#### Cómo separaste recepción, cola temporal y renderizado;
+Dividí el proceso en tres partes:
 
 - Recepción: solo recibo el mensaje por WebSocket.
 - Cola temporal: guardo los eventos con su timestamp.
 - Renderizado: en cada frame comparo el tiempo actual con el timestamp y ejecuto la animación cuando corresponde.
 
-> Esto evita que todo pase apenas llega el mensaje y permite mantener la sincronización.
+Esto evita que todo pase apenas llega el mensaje y permite mantener la sincronización.
 
-### Qué pruebas hiciste para verificar la sincronización;
-> Primero probé ejecutar los eventos apenas llegaban, y se veía desordenado y fuera de ritmo, luego implementé la cola con timestamp y las animaciones empezaron a coincidir con el ritmo, también probé con muchos eventos seguidos para asegurar que no se perdieran y que el orden se mantuviera y por último, ajusté un pequeño valor de latencia para mejorar la precisión.
+#### Qué pruebas hiciste para verificar la sincronización;
+Primero probé ejecutar los eventos apenas llegaban, y se veía desordenado y fuera de ritmo, luego implementé la cola con timestamp y las animaciones empezaron a coincidir con el ritmo, también probé con muchos eventos seguidos para asegurar que no se perdieran y que el orden se mantuviera y por último, ajusté un pequeño valor de latencia para mejorar la precisión.
 
 ### Qué problemas encontraste y cómo los solucionaste.
-> Uno de los principales problemas fue que Strudel no envía eventos directamente, así que tuve que simular ese envío, también el frontend estaba dependiendo del formato original de Strudel (args), lo cual no era buena práctica. Eso lo solucioné usando un Adapter en el servidor, otro problema fue que los eventos se ejecutaban apenas llegaban, lo que causaba desfase. Esto lo arreglé usando una cola basada en timestamp y finalmente, tuve diferencias en los nombres de los sonidos, y lo solucioné normalizándolos en el Adapter.
+Uno de los principales problemas fue que Strudel no envía eventos directamente, así que tuve que simular ese envío, también el frontend estaba dependiendo del formato original de Strudel (args), lo cual no era buena práctica. Eso lo solucioné usando un Adapter en el servidor, otro problema fue que los eventos se ejecutaban apenas llegaban, lo que causaba desfase. Esto lo arreglé usando una cola basada en timestamp y finalmente, tuve diferencias en los nombres de los sonidos, y lo solucioné normalizándolos en el Adapter.
 
 </details>
 
