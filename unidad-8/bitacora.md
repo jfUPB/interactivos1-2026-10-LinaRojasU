@@ -23,8 +23,9 @@ while True:
 ```
 setcps(0.5)
 
-const pat = s("bd*4, [- cp]*2, [- hh]*4").bank("tr909")
+const pat = s("bd*4, [- cp]*2, [hh ~ hh hh]*2, [bd bd ~ hh]").bank("tr909")
 
+  
 $: stack(
   pat.gain('1'),
   pat.osc(),
@@ -95,36 +96,34 @@ Durante el proceso aparecieron varios errores técnicos que tuve que corregir.
 
 ### Actividad 2
 ### El concepto de la obra;
-La propuesta consiste en una experiencia de live coding audiovisual inmersiva donde el ritmo, la melodía y el gesto físico transforman constantemente un paisaje visual ambiental compuesto por ondas, grano, pulsos y trazos dinámicos.
-La idea principal es generar una sensación de flujo orgánico donde sonido e interacción corporal afectan directamente el comportamiento visual del sistema.
-
+Una experiencia electrónica inmersiva donde el espacio visual reacciona en tiempo real a datos físicos y musicales, creando una atmósfera de concierto digital
 
 ### El rol de micro:bit, Strudel y Open Stage Control;
 micro:bit
-> El micro:bit funciona como una herramienta gestual que modifica la dirección y velocidad del flujo visual.
-> Su propósito es aportar una sensación física y expresiva dentro de la performance.
+> controla movimiento y posición con acelerómetro, aporta interacción física y gestual.
 
 Strudel
-> Strudel actúa como la estructura temporal de la obra.
-> Los drums (bd, cp, hh) activan distintos efectos visuales, mientras que la melodía mantiene una capa ambiental continua.
+> genera eventos rítmicos y melódicos que disparan partículas, cintas y pulsos.
 
 Open Stage Control
-> Open Stage Control permite modificar parámetros persistentes en tiempo real, especialmente color, escala y activación de algunos efectos visuales.
+> ajusta parámetros visuales como escala, densidad, color e intensidad en vivo.
 
 ### Las decisiones visuales, musicales y performáticas;
 Visuales
-> Decidí trabajar una estética inmersiva y ambiental utilizando: ondas, grano visual, ribbons y pulsos dinámicos
-> Todo el sistema busca sentirse fluido y orgánico, evitando gravedad o movimientos demasiado rígidos.
+> formas geométricas, brillos suaves y capas de trail para evitar saturación.
 
 Musicales
-> Los drums se utilizan para marcar estructura rítmica y generar eventos visibles claros, mientras que las melodías aportan continuidad y atmósfera.
+> respuestas basadas en tipos de sonido (bd, hh, melodía) para diferenciar percusión y pads.
 
 Performáticas
-> El micro:bit funciona como una especie de “batuta corporal” que deforma el flujo visual mediante movimiento físico, mientras que Open Stage Control permite intervenir parámetros en vivo durante la ejecución.
+> el sistema requiere sincronía de los tres dispositivos pero mantiene continuidad visual con datos recientes.
 
 ### Los cambios realizados entre la iteración ingenieril y la iteración estética;
-En la iteración ingenieril el objetivo principal fue lograr una integración funcional mínima entre las tres fuentes y validar el recorrido completo de mensajes dentro de la arquitectura.
-Posteriormente, en la iteración estética, el sistema evolucionó hacia una propuesta más inmersiva y performática. Se añadieron efectos visuales diferenciados según el sonido, smoothing para los movimientos del micro:bit y un mapeo más claro de los controles OSC.
+Ingenieril
+> se implementó la plataforma de puente WebSocket/OSC y la lógica de conexiones.
+
+Estética
+> se afinó la opacidad, la velocidad, la duración de efectos y la supervivencia del modo concierto para que no se apague al perder un pulso OSC momentáneo.
 
 ### Evidencias de ensayo.
 <img width="958" height="453" alt="image" src="https://github.com/user-attachments/assets/a735fca1-c985-4a48-886e-7fee62265d41" />
@@ -160,6 +159,6 @@ Performáticamente, el micro:bit se utiliza como una herramienta gestual que mod
 La intención general es que sonido, gesto y visualidad no funcionen como elementos separados, sino como partes de un mismo sistema interactivo.
 
 ### Evidencias de pruebas y ensayos.
-<img width="1905" height="854" alt="image" src="https://github.com/user-attachments/assets/41ff08b3-a8fa-478d-8129-be1b0fbda137" />
+<img width="1901" height="877" alt="image" src="https://github.com/user-attachments/assets/3ed511e1-f64a-4d17-9ac7-948a8d415a80" />
 
 </details>
